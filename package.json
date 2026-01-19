@@ -1,0 +1,70 @@
+{
+  "name": "custom-code",
+  "displayName": "Theme Customizer",
+  "description": "Easily customize your VS Code theme colors with a visual interface",
+  "version": "0.1.0",
+  "publisher": "aprameyakannan",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aprameyak/custom-code"
+  },
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.107.0"
+  },
+  "categories": [
+    "Themes",
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "custom-code.openCustomizer",
+        "title": "Open Theme Customizer"
+      }
+    ],
+    "configuration": {
+      "title": "Theme Customizer",
+      "properties": {
+        "themeCustomizer.autoApply": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically apply theme changes without clicking Apply"
+        },
+        "themeCustomizer.rememberSettings": {
+          "type": "boolean",
+          "default": true,
+          "description": "Remember custom color settings between sessions"
+        },
+        "themeCustomizer.showHexValues": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show hex color values next to color pickers"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@types/sinon": "^17.0.0",
+    "@types/vscode": "^1.107.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.7.1",
+    "eslint": "^9.39.1",
+    "sinon": "^18.0.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.48.1"
+  }
+}
