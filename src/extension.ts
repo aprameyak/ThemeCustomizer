@@ -1,8 +1,5 @@
 import * as vscode from 'vscode';
-
 export function activate(context: vscode.ExtensionContext) {
-    console.log('Extension "custom-code" is now active!');
-
     const disposable = vscode.commands.registerCommand('custom-code.openCustomizer', () => {
         const panel = vscode.window.createWebviewPanel(
             'themeCustomizer',
@@ -10,19 +7,15 @@ export function activate(context: vscode.ExtensionContext) {
             vscode.ViewColumn.One,
             { enableScripts: true }
         );
-
         panel.webview.html = getWebviewContent();
-
         panel.webview.onDidReceiveMessage(async message => {
             if (message.type === 'applyTheme') {
                 const isValidHex = (color: string) => /^#[0-9A-F]{6}$/i.test(color);
                 const invalidColors = Object.entries(message.colors as Record<string, string>).filter(([key, value]) => !isValidHex(value));
-
                 if (invalidColors.length > 0) {
                     vscode.window.showErrorMessage(`Invalid color values: ${invalidColors.map(([k]) => k).join(', ')}`);
                     return;
                 }
-
                 try {
                     const config = vscode.workspace.getConfiguration();
                     await config.update(
@@ -64,7 +57,6 @@ export function activate(context: vscode.ExtensionContext) {
                         },
                         vscode.ConfigurationTarget.Global
                     );
-
 
                     await config.update(
                         'editor.tokenColorCustomizations',
@@ -138,7 +130,6 @@ export function activate(context: vscode.ExtensionContext) {
                         },
                         vscode.ConfigurationTarget.Global
                     );
-
                     vscode.window.showInformationMessage('Theme applied successfully!');
                     panel.webview.postMessage({ type: 'status', status: 'success', message: 'Theme applied successfully!' });
                 } catch (error) {
@@ -160,10 +151,8 @@ export function activate(context: vscode.ExtensionContext) {
                 try {
                     const config = vscode.workspace.getConfiguration();
                     const preset = message.preset;
-
                     await config.update('workbench.colorCustomizations', preset.workbench, vscode.ConfigurationTarget.Global);
                     await config.update('editor.tokenColorCustomizations', preset.tokenColors, vscode.ConfigurationTarget.Global);
-
                     vscode.window.showInformationMessage(`Preset "${preset.name}" applied successfully!`);
                     panel.webview.postMessage({ type: 'status', status: 'success', message: `Preset "${preset.name}" applied successfully!` });
                 } catch (error) {
@@ -175,7 +164,6 @@ export function activate(context: vscode.ExtensionContext) {
                     const config = vscode.workspace.getConfiguration();
                     const workbenchColors = config.get('workbench.colorCustomizations') || {};
                     const tokenColors = config.get('editor.tokenColorCustomizations') || {};
-
                     const themeData = {
                         name: 'Custom Theme',
                         version: '1.0',
@@ -183,11 +171,9 @@ export function activate(context: vscode.ExtensionContext) {
                         tokenColors: tokenColors,
                         exportedAt: new Date().toISOString()
                     };
-
                     const themeJson = JSON.stringify(themeData, null, 2);
                     const uri = vscode.Uri.file('custom-theme.json');
                     await vscode.workspace.fs.writeFile(uri, Buffer.from(themeJson));
-
                     vscode.window.showInformationMessage('Theme exported to custom-theme.json');
                     vscode.workspace.openTextDocument(uri).then(doc => vscode.window.showTextDocument(doc));
                     panel.webview.postMessage({ type: 'status', status: 'success', message: 'Theme exported successfully!' });
@@ -207,16 +193,13 @@ export function activate(context: vscode.ExtensionContext) {
                         },
                         openLabel: 'Import Theme'
                     });
-
                     if (uri && uri[0]) {
                         const content = await vscode.workspace.fs.readFile(uri[0]);
                         const themeData = JSON.parse(content.toString());
-
                         if (themeData.workbench && themeData.tokenColors) {
                             const config = vscode.workspace.getConfiguration();
                             await config.update('workbench.colorCustomizations', themeData.workbench, vscode.ConfigurationTarget.Global);
                             await config.update('editor.tokenColorCustomizations', themeData.tokenColors, vscode.ConfigurationTarget.Global);
-
                             vscode.window.showInformationMessage('Theme imported successfully!');
                             panel.webview.postMessage({ type: 'status', status: 'success', message: 'Theme imported successfully!' });
                         } else {
@@ -231,12 +214,9 @@ export function activate(context: vscode.ExtensionContext) {
             }
         });
     });
-
     context.subscriptions.push(disposable);
 }
-
-export function deactivate() {}
-
+export function deactivate() { }
 function getWebviewContent(): string {
     return `
     <!DOCTYPE html>
@@ -412,16 +392,13 @@ function getWebviewContent(): string {
                 <button id="reset" class="secondary">Reset to Default</button>
             </div>
         </div>
-
         <div id="status" class="status" style="display: none;">
             <span id="status-text"></span>
         </div>
-
         <div class="tabs">
             <div class="tab active" data-tab="presets">Presets</div>
             <div class="tab" data-tab="custom">Custom Colors</div>
         </div>
-
         <div id="presets" class="tab-content active">
             <div class="presets-grid">
                 <div class="preset-card" data-preset="dark">
@@ -453,7 +430,6 @@ function getWebviewContent(): string {
                 <button id="apply-preset" style="display: none;">Apply Selected Preset</button>
             </div>
         </div>
-
         <div id="custom" class="tab-content">
             <div class="section">
                 <h3>Editor Colors</h3>
@@ -488,7 +464,6 @@ function getWebviewContent(): string {
                     <input type="text" id="cursor-hex" value="#aeafad" readonly />
                 </div>
             </div>
-
             <div class="section">
                 <h3>UI Colors</h3>
                 <div class="color-group">
@@ -527,7 +502,6 @@ function getWebviewContent(): string {
                     <input type="text" id="panel-bg-hex" value="#252526" readonly />
                 </div>
             </div>
-
             <div class="section">
                 <h3>Syntax Highlighting</h3>
                 <div class="color-group">
@@ -606,16 +580,13 @@ function getWebviewContent(): string {
                     <input type="text" id="operators-hex" value="#d4d4d4" readonly />
                 </div>
             </div>
-
             <div class="button-group">
                 <button id="apply">Apply Custom Theme</button>
             </div>
         </div>
-
         <script>
             const vscode = acquireVsCodeApi();
             let selectedPreset = null;
-
 
             window.addEventListener('message', event => {
                 const message = event.data;
@@ -628,25 +599,21 @@ function getWebviewContent(): string {
                     setLoading('reset', false);
                 }
             });
-
             function showStatus(message, type = 'info', duration = 3000) {
                 const status = document.getElementById('status');
                 const statusText = document.getElementById('status-text');
                 statusText.textContent = message;
                 status.className = 'status ' + type;
                 status.style.display = 'block';
-
                 if (duration > 0) {
                     setTimeout(() => {
                         status.style.display = 'none';
                     }, duration);
                 }
             }
-
             function setLoading(buttonId, loading) {
                 const button = document.getElementById(buttonId);
                 if (!button) return;
-
                 if (loading) {
                     button.disabled = true;
                     button.textContent = button.textContent.replace(/^(Export Theme|Import Theme|Reset to Default|Apply Custom Theme|Apply Selected Preset)/, 'Loading...');
@@ -663,7 +630,6 @@ function getWebviewContent(): string {
                 }
             }
 
-
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.addEventListener('click', () => {
                     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -672,7 +638,6 @@ function getWebviewContent(): string {
                     document.getElementById(tab.dataset.tab).classList.add('active');
                 });
             });
-
 
             document.querySelectorAll('.preset-card').forEach(card => {
                 card.addEventListener('click', () => {
@@ -683,7 +648,6 @@ function getWebviewContent(): string {
                 });
             });
 
-
             document.querySelectorAll('input[type="color"]').forEach(picker => {
                 const hexInput = document.getElementById(picker.id + '-hex');
                 if (hexInput) {
@@ -693,11 +657,9 @@ function getWebviewContent(): string {
                 }
             });
 
-
             document.getElementById('apply').addEventListener('click', () => {
                 setLoading('apply', true);
                 showStatus('Applying custom theme...', 'info', 0);
-
                 vscode.postMessage({
                     type: 'applyTheme',
                     colors: {
@@ -754,10 +716,8 @@ function getWebviewContent(): string {
                 });
             });
 
-
             document.getElementById('apply-preset').addEventListener('click', () => {
                 if (!selectedPreset) return;
-
                 const presets = {
                     dark: {
                         name: 'Dark Theme',
@@ -913,16 +873,13 @@ function getWebviewContent(): string {
                         }
                     }
                 };
-
                 setLoading('apply-preset', true);
                 showStatus('Applying preset theme...', 'info', 0);
-
                 vscode.postMessage({
                     type: 'applyPreset',
                     preset: presets[selectedPreset]
                 });
             });
-
 
             document.getElementById('export').addEventListener('click', () => {
                 setLoading('export', true);
@@ -930,13 +887,11 @@ function getWebviewContent(): string {
                 vscode.postMessage({ type: 'exportTheme' });
             });
 
-
             document.getElementById('import').addEventListener('click', () => {
                 setLoading('import', true);
                 showStatus('Importing theme...', 'info', 0);
                 vscode.postMessage({ type: 'importTheme' });
             });
-
 
             document.getElementById('reset').addEventListener('click', () => {
                 setLoading('reset', true);
@@ -948,4 +903,3 @@ function getWebviewContent(): string {
     </html>
     `;
 }
-

@@ -1,5 +1,13 @@
 # Theme Customizer
 
+![VS Code Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/aprameyakannan.<EXTENSION_ID>)
+![VS Code Marketplace Downloads](https://img.shields.io/visual-studio-marketplace/d/aprameyakannan.<EXTENSION_ID>)
+![VS Code Marketplace Rating](https://img.shields.io/visual-studio-marketplace/r/aprameyakannan.<EXTENSION_ID>)
+![VS Code](https://img.shields.io/badge/VS%20Code-%3E%3D1.107.0-blue)
+![License](https://img.shields.io/github/license/<github-username>/<repo>)
+![Live Preview](https://img.shields.io/badge/Live-Real--time%20Preview-success)
+![Theme Editor](https://img.shields.io/badge/Theme-Visual%20Customizer-purple)
+
 A VS Code extension that allows you to customize your editor theme colors through a visual interface.
 
 ## Features
@@ -22,15 +30,3 @@ A VS Code extension that allows you to customize your editor theme colors throug
 ## Requirements
 
 - VS Code version 1.107.0 or higher
-
-## Release Notes
-
-### 0.1.0
-- Comprehensive color customization (20+ options)
-- Preset themes
-- Import/export functionality
-- Reset to default
-- Enhanced UI with tabs
-
-### 0.0.1
-- Basic theme customization
