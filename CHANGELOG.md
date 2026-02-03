@@ -2,7 +2,7 @@
 
 All notable changes to the "custom-code" extension will be documented in this file.
 
-## [0.0.1] - 2025-12-18
+## [0.1.0] - 2026-02-03
 
 ### Added
 - Theme Customizer webview with visual color picker interface
