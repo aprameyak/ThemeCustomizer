@@ -4,6 +4,7 @@
   "description": "Easily customize your VS Code theme colors with a visual interface",
   "version": "0.1.0",
   "publisher": "aprameyakannan",
+  "icon": "assets/logo.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/aprameyak/custom-code"
