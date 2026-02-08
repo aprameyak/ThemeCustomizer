@@ -5,6 +5,7 @@ All notable changes to the "custom-code" extension will be documented in this fi
 ## [0.1.0] - 2026-02-03
 
 ### Added
+- Professional extension logo
 - Theme Customizer webview with visual color picker interface
 - Comprehensive theme customization including:
   - Editor colors (background, foreground, line numbers, selection)

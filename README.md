@@ -1,10 +1,12 @@
 # Theme Customizer
+<img src="assets/logo.png" align="right" width="100" />
+
 
 ![VS Code Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/aprameyakannan.custom-code)
 ![VS Code Marketplace Downloads](https://img.shields.io/visual-studio-marketplace/d/aprameyakannan.custom-code)
 ![VS Code Marketplace Rating](https://img.shields.io/visual-studio-marketplace/r/aprameyakannan.custom-code)
 ![VS Code](https://img.shields.io/badge/VS%20Code-%3E%3D1.107.0-blue)
-![License](https://img.shields.io/github/license/aprameyak/ThemeCustomizer)
+![License](https://img.shields.io/github/license/aprameyak/custom-code)
 ![Live Preview](https://img.shields.io/badge/Live-Real--time%20Preview-success)
 ![Theme Editor](https://img.shields.io/badge/Theme-Visual%20Customizer-purple)
 
