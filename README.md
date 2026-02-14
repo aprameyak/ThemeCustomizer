@@ -1,9 +1,9 @@
 # Theme Customizer
 
 
-![VS Code Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/AprameyaKannan.custom-code)
-![VS Code Marketplace Downloads](https://img.shields.io/visual-studio-marketplace/d/AprameyaKannan.custom-code)
-![VS Code Marketplace Rating](https://img.shields.io/visual-studio-marketplace/r/AprameyaKannan.custom-code)
+![VS Code Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/AprameyaKannan.custom-code?cacheSeconds=86400)
+![VS Code Marketplace Downloads](https://img.shields.io/visual-studio-marketplace/d/AprameyaKannan.custom-code?cacheSeconds=86400)
+![VS Code Marketplace Rating](https://img.shields.io/visual-studio-marketplace/r/AprameyaKannan.custom-code?cacheSeconds=86400)
 ![VS Code](https://img.shields.io/badge/VS%20Code-%3E%3D1.107.0-blue)
 ![License](https://img.shields.io/github/license/aprameyak/ThemeCustomizer)
 
