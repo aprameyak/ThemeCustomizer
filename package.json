@@ -2,7 +2,7 @@
   "name": "custom-code",
   "displayName": "Theme Customizer",
   "description": "Easily customize your VS Code theme colors with a visual interface",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "aprameyakannan",
   "icon": "assets/logo.png",
   "repository": {
@@ -17,7 +17,7 @@
     "Themes",
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": ["onCommand:custom-code.openCustomizer"],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [

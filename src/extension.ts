@@ -76,11 +76,18 @@ export function activate(context: vscode.ExtensionContext) {
         );
         panel.webview.html = getWebviewContent();
         
-        // Send current theme data to webview
+        // Send current theme data and settings to webview
+        const extConfig = vscode.workspace.getConfiguration('themeCustomizer');
+        const autoApply = extConfig.get<boolean>('autoApply', false);
+        const showHexValues = extConfig.get<boolean>('showHexValues', true);
+        const rememberSettings = extConfig.get<boolean>('rememberSettings', true);
         const currentColors = getCurrentThemeColors();
         panel.webview.postMessage({
-            type: 'loadCurrentTheme',
-            colors: currentColors
+            type: 'init',
+            colors: currentColors,
+            autoApply,
+            showHexValues,
+            rememberSettings
         });
         panel.webview.onDidReceiveMessage(async message => {
             if (message.type === 'applyTheme') {
@@ -132,76 +139,44 @@ export function activate(context: vscode.ExtensionContext) {
                         vscode.ConfigurationTarget.Global
                     );
 
+                    const managedScopes = new Set([
+                        'keyword', 'storage.type', 'storage.modifier',
+                        'keyword.control', 'string', 'string.template', 'string.interpolated',
+                        'comment', 'comment.line', 'comment.block',
+                        'constant.numeric', 'constant.language', 'constant.other',
+                        'entity.name.function', 'support.function',
+                        'entity.name.type', 'entity.name.class',
+                        'variable', 'support.variable', 'variable.parameter',
+                        'entity.name.tag', 'entity.other.attribute-name',
+                        'punctuation', 'meta.brace', 'keyword.operator'
+                    ]);
+                    const existingTokenConfig = config.get('editor.tokenColorCustomizations') as any || {};
+                    const existingRules: any[] = existingTokenConfig.textMateRules || [];
+                    const preservedRules = existingRules.filter((rule: any) => {
+                        const scopes = Array.isArray(rule.scope) ? rule.scope : [rule.scope];
+                        return !scopes.some((s: string) => managedScopes.has(s));
+                    });
+                    const newRules = [
+                        { scope: ['keyword', 'storage.type', 'storage.modifier'], settings: { foreground: message.colors.keywords } },
+                        { scope: ['keyword.control'], settings: { foreground: message.colors.controlKeywords } },
+                        { scope: ['string'], settings: { foreground: message.colors.strings } },
+                        { scope: ['string.template', 'string.interpolated'], settings: { foreground: message.colors.templateStrings } },
+                        { scope: ['comment'], settings: { foreground: message.colors.comments } },
+                        { scope: ['comment.line', 'comment.block'], settings: { foreground: message.colors.comments, fontStyle: 'italic' } },
+                        { scope: ['constant.numeric', 'constant.language'], settings: { foreground: message.colors.numbers } },
+                        { scope: ['constant.other'], settings: { foreground: message.colors.constants } },
+                        { scope: ['entity.name.function', 'support.function'], settings: { foreground: message.colors.functions } },
+                        { scope: ['entity.name.type', 'entity.name.class'], settings: { foreground: message.colors.classes } },
+                        { scope: ['variable', 'support.variable'], settings: { foreground: message.colors.variables } },
+                        { scope: ['variable.parameter'], settings: { foreground: message.colors.parameters } },
+                        { scope: ['entity.name.tag'], settings: { foreground: message.colors.tags } },
+                        { scope: ['entity.other.attribute-name'], settings: { foreground: message.colors.attributes } },
+                        { scope: ['punctuation', 'meta.brace'], settings: { foreground: message.colors.punctuation } },
+                        { scope: ['keyword.operator'], settings: { foreground: message.colors.operators } }
+                    ];
                     await config.update(
                         'editor.tokenColorCustomizations',
-                        {
-                            textMateRules: [
-                                {
-                                    scope: ['keyword', 'storage.type', 'storage.modifier'],
-                                    settings: { foreground: message.colors.keywords }
-                                },
-                                {
-                                    scope: ['keyword.control'],
-                                    settings: { foreground: message.colors.controlKeywords }
-                                },
-                                {
-                                    scope: ['string'],
-                                    settings: { foreground: message.colors.strings }
-                                },
-                                {
-                                    scope: ['string.template', 'string.interpolated'],
-                                    settings: { foreground: message.colors.templateStrings }
-                                },
-                                {
-                                    scope: ['comment'],
-                                    settings: { foreground: message.colors.comments }
-                                },
-                                {
-                                    scope: ['comment.line', 'comment.block'],
-                                    settings: { foreground: message.colors.comments, fontStyle: message.colors.commentStyle }
-                                },
-                                {
-                                    scope: ['constant.numeric', 'constant.language'],
-                                    settings: { foreground: message.colors.numbers }
-                                },
-                                {
-                                    scope: ['constant.other'],
-                                    settings: { foreground: message.colors.constants }
-                                },
-                                {
-                                    scope: ['entity.name.function', 'support.function'],
-                                    settings: { foreground: message.colors.functions }
-                                },
-                                {
-                                    scope: ['entity.name.type', 'entity.name.class'],
-                                    settings: { foreground: message.colors.classes }
-                                },
-                                {
-                                    scope: ['variable', 'support.variable'],
-                                    settings: { foreground: message.colors.variables }
-                                },
-                                {
-                                    scope: ['variable.parameter'],
-                                    settings: { foreground: message.colors.parameters }
-                                },
-                                {
-                                    scope: ['entity.name.tag'],
-                                    settings: { foreground: message.colors.tags }
-                                },
-                                {
-                                    scope: ['entity.other.attribute-name'],
-                                    settings: { foreground: message.colors.attributes }
-                                },
-                                {
-                                    scope: ['punctuation', 'meta.brace'],
-                                    settings: { foreground: message.colors.punctuation }
-                                },
-                                {
-                                    scope: ['keyword.operator'],
-                                    settings: { foreground: message.colors.operators }
-                                }
-                            ]
-                        },
+                        { ...existingTokenConfig, textMateRules: [...preservedRules, ...newRules] },
                         vscode.ConfigurationTarget.Global
                     );
                     vscode.window.showInformationMessage('Theme applied successfully!');
@@ -246,10 +221,20 @@ export function activate(context: vscode.ExtensionContext) {
                         exportedAt: new Date().toISOString()
                     };
                     const themeJson = JSON.stringify(themeData, null, 2);
-                    const uri = vscode.Uri.file('custom-theme.json');
-                    await vscode.workspace.fs.writeFile(uri, Buffer.from(themeJson));
-                    vscode.window.showInformationMessage('Theme exported to custom-theme.json');
-                    vscode.workspace.openTextDocument(uri).then(doc => vscode.window.showTextDocument(doc));
+                    const defaultExportUri = vscode.workspace.workspaceFolders?.[0]
+                        ? vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, 'custom-theme.json')
+                        : undefined;
+                    const saveUri = await vscode.window.showSaveDialog({
+                        defaultUri: defaultExportUri,
+                        filters: { 'JSON files': ['json'], 'All files': ['*'] },
+                        saveLabel: 'Export Theme'
+                    });
+                    if (!saveUri) {
+                        panel.webview.postMessage({ type: 'status', status: 'info', message: 'Export cancelled' });
+                        return;
+                    }
+                    await vscode.workspace.fs.writeFile(saveUri, Buffer.from(themeJson));
+                    vscode.window.showInformationMessage('Theme exported successfully!');
                     panel.webview.postMessage({ type: 'status', status: 'success', message: 'Theme exported successfully!' });
                 } catch (error) {
                     vscode.window.showErrorMessage(`Failed to export theme: ${error}`);
@@ -510,32 +495,32 @@ function getWebviewContent(): string {
                 <div class="color-group">
                     <label>Background:</label>
                     <input type="color" id="editor-bg" value="#1e1e1e" />
-                    <input type="text" id="editor-bg-hex" value="#1e1e1e" readonly />
+                    <input type="text" id="editor-bg-hex" value="#1e1e1e" />
                 </div>
                 <div class="color-group">
                     <label>Foreground:</label>
                     <input type="color" id="editor-fg" value="#d4d4d4" />
-                    <input type="text" id="editor-fg-hex" value="#d4d4d4" readonly />
+                    <input type="text" id="editor-fg-hex" value="#d4d4d4" />
                 </div>
                 <div class="color-group">
                     <label>Line Numbers:</label>
                     <input type="color" id="line-numbers" value="#858585" />
-                    <input type="text" id="line-numbers-hex" value="#858585" readonly />
+                    <input type="text" id="line-numbers-hex" value="#858585" />
                 </div>
                 <div class="color-group">
                     <label>Selection:</label>
                     <input type="color" id="selection" value="#264f78" />
-                    <input type="text" id="selection-hex" value="#264f78" readonly />
+                    <input type="text" id="selection-hex" value="#264f78" />
                 </div>
                 <div class="color-group">
                     <label>Line Highlight:</label>
                     <input type="color" id="line-highlight" value="#2a2d2e" />
-                    <input type="text" id="line-highlight-hex" value="#2a2d2e" readonly />
+                    <input type="text" id="line-highlight-hex" value="#2a2d2e" />
                 </div>
                 <div class="color-group">
                     <label>Cursor:</label>
                     <input type="color" id="cursor" value="#aeafad" />
-                    <input type="text" id="cursor-hex" value="#aeafad" readonly />
+                    <input type="text" id="cursor-hex" value="#aeafad" />
                 </div>
             </div>
             <div class="section">
@@ -543,37 +528,37 @@ function getWebviewContent(): string {
                 <div class="color-group">
                     <label>Sidebar Background:</label>
                     <input type="color" id="sidebar-bg" value="#252526" />
-                    <input type="text" id="sidebar-bg-hex" value="#252526" readonly />
+                    <input type="text" id="sidebar-bg-hex" value="#252526" />
                 </div>
                 <div class="color-group">
                     <label>Sidebar Foreground:</label>
                     <input type="color" id="sidebar-fg" value="#cccccc" />
-                    <input type="text" id="sidebar-fg-hex" value="#cccccc" readonly />
+                    <input type="text" id="sidebar-fg-hex" value="#cccccc" />
                 </div>
                 <div class="color-group">
                     <label>Activity Bar Background:</label>
                     <input type="color" id="activity-bar-bg" value="#333333" />
-                    <input type="text" id="activity-bar-bg-hex" value="#333333" readonly />
+                    <input type="text" id="activity-bar-bg-hex" value="#333333" />
                 </div>
                 <div class="color-group">
                     <label>Status Bar Background:</label>
                     <input type="color" id="status-bar-bg" value="#007acc" />
-                    <input type="text" id="status-bar-bg-hex" value="#007acc" readonly />
+                    <input type="text" id="status-bar-bg-hex" value="#007acc" />
                 </div>
                 <div class="color-group">
                     <label>Title Bar Background:</label>
                     <input type="color" id="title-bar-bg" value="#3c3c3c" />
-                    <input type="text" id="title-bar-bg-hex" value="#3c3c3c" readonly />
+                    <input type="text" id="title-bar-bg-hex" value="#3c3c3c" />
                 </div>
                 <div class="color-group">
                     <label>Tab Active Background:</label>
                     <input type="color" id="tab-active-bg" value="#1e1e1e" />
-                    <input type="text" id="tab-active-bg-hex" value="#1e1e1e" readonly />
+                    <input type="text" id="tab-active-bg-hex" value="#1e1e1e" />
                 </div>
                 <div class="color-group">
                     <label>Panel Background:</label>
                     <input type="color" id="panel-bg" value="#252526" />
-                    <input type="text" id="panel-bg-hex" value="#252526" readonly />
+                    <input type="text" id="panel-bg-hex" value="#252526" />
                 </div>
             </div>
             <div class="section">
@@ -581,77 +566,77 @@ function getWebviewContent(): string {
                 <div class="color-group">
                     <label>Keywords:</label>
                     <input type="color" id="keywords" value="#569cd6" />
-                    <input type="text" id="keywords-hex" value="#569cd6" readonly />
+                    <input type="text" id="keywords-hex" value="#569cd6" />
                 </div>
                 <div class="color-group">
                     <label>Control Keywords:</label>
                     <input type="color" id="control-keywords" value="#c586c0" />
-                    <input type="text" id="control-keywords-hex" value="#c586c0" readonly />
+                    <input type="text" id="control-keywords-hex" value="#c586c0" />
                 </div>
                 <div class="color-group">
                     <label>Strings:</label>
                     <input type="color" id="strings" value="#ce9178" />
-                    <input type="text" id="strings-hex" value="#ce9178" readonly />
+                    <input type="text" id="strings-hex" value="#ce9178" />
                 </div>
                 <div class="color-group">
                     <label>Template Strings:</label>
                     <input type="color" id="template-strings" value="#ce9178" />
-                    <input type="text" id="template-strings-hex" value="#ce9178" readonly />
+                    <input type="text" id="template-strings-hex" value="#ce9178" />
                 </div>
                 <div class="color-group">
                     <label>Comments:</label>
                     <input type="color" id="comments" value="#6a9955" />
-                    <input type="text" id="comments-hex" value="#6a9955" readonly />
+                    <input type="text" id="comments-hex" value="#6a9955" />
                 </div>
                 <div class="color-group">
                     <label>Numbers:</label>
                     <input type="color" id="numbers" value="#b5cea8" />
-                    <input type="text" id="numbers-hex" value="#b5cea8" readonly />
+                    <input type="text" id="numbers-hex" value="#b5cea8" />
                 </div>
                 <div class="color-group">
                     <label>Constants:</label>
                     <input type="color" id="constants" value="#4ec9b0" />
-                    <input type="text" id="constants-hex" value="#4ec9b0" readonly />
+                    <input type="text" id="constants-hex" value="#4ec9b0" />
                 </div>
                 <div class="color-group">
                     <label>Functions:</label>
                     <input type="color" id="functions" value="#dcdcaa" />
-                    <input type="text" id="functions-hex" value="#dcdcaa" readonly />
+                    <input type="text" id="functions-hex" value="#dcdcaa" />
                 </div>
                 <div class="color-group">
                     <label>Classes/Types:</label>
                     <input type="color" id="classes" value="#4ec9b0" />
-                    <input type="text" id="classes-hex" value="#4ec9b0" readonly />
+                    <input type="text" id="classes-hex" value="#4ec9b0" />
                 </div>
                 <div class="color-group">
                     <label>Variables:</label>
                     <input type="color" id="variables" value="#9cdcfe" />
-                    <input type="text" id="variables-hex" value="#9cdcfe" readonly />
+                    <input type="text" id="variables-hex" value="#9cdcfe" />
                 </div>
                 <div class="color-group">
                     <label>Parameters:</label>
                     <input type="color" id="parameters" value="#9cdcfe" />
-                    <input type="text" id="parameters-hex" value="#9cdcfe" readonly />
+                    <input type="text" id="parameters-hex" value="#9cdcfe" />
                 </div>
                 <div class="color-group">
                     <label>Tags:</label>
                     <input type="color" id="tags" value="#569cd6" />
-                    <input type="text" id="tags-hex" value="#569cd6" readonly />
+                    <input type="text" id="tags-hex" value="#569cd6" />
                 </div>
                 <div class="color-group">
                     <label>Attributes:</label>
                     <input type="color" id="attributes" value="#9cdcfe" />
-                    <input type="text" id="attributes-hex" value="#9cdcfe" readonly />
+                    <input type="text" id="attributes-hex" value="#9cdcfe" />
                 </div>
                 <div class="color-group">
                     <label>Punctuation:</label>
                     <input type="color" id="punctuation" value="#d4d4d4" />
-                    <input type="text" id="punctuation-hex" value="#d4d4d4" readonly />
+                    <input type="text" id="punctuation-hex" value="#d4d4d4" />
                 </div>
                 <div class="color-group">
                     <label>Operators:</label>
                     <input type="color" id="operators" value="#d4d4d4" />
-                    <input type="text" id="operators-hex" value="#d4d4d4" readonly />
+                    <input type="text" id="operators-hex" value="#d4d4d4" />
                 </div>
             </div>
             <div class="button-group">
@@ -661,6 +646,47 @@ function getWebviewContent(): string {
         <script>
             const vscode = acquireVsCodeApi();
             let selectedPreset = null;
+            let autoApplyEnabled = false;
+            let autoApplyTimer = null;
+
+            function triggerAutoApply() {
+                if (!autoApplyEnabled) return;
+                clearTimeout(autoApplyTimer);
+                autoApplyTimer = setTimeout(() => {
+                    document.getElementById('apply').click();
+                }, 600);
+            }
+
+            function loadColors(colors) {
+                updateColorInput('editor-bg', colors.editorBackground);
+                updateColorInput('editor-fg', colors.editorForeground);
+                updateColorInput('line-numbers', colors.lineNumbers);
+                updateColorInput('selection', colors.selection);
+                updateColorInput('line-highlight', colors.lineHighlight);
+                updateColorInput('cursor', colors.cursor);
+                updateColorInput('sidebar-bg', colors.sidebarBackground);
+                updateColorInput('sidebar-fg', colors.sidebarForeground);
+                updateColorInput('activity-bar-bg', colors.activityBarBackground);
+                updateColorInput('status-bar-bg', colors.statusBarBackground);
+                updateColorInput('title-bar-bg', colors.titleBarBackground);
+                updateColorInput('tab-active-bg', colors.tabActiveBackground);
+                updateColorInput('panel-bg', colors.panelBackground);
+                updateColorInput('keywords', colors.keywords);
+                updateColorInput('control-keywords', colors.controlKeywords);
+                updateColorInput('strings', colors.strings);
+                updateColorInput('template-strings', colors.templateStrings);
+                updateColorInput('comments', colors.comments);
+                updateColorInput('numbers', colors.numbers);
+                updateColorInput('constants', colors.constants);
+                updateColorInput('functions', colors.functions);
+                updateColorInput('classes', colors.classes);
+                updateColorInput('variables', colors.variables);
+                updateColorInput('parameters', colors.parameters);
+                updateColorInput('tags', colors.tags);
+                updateColorInput('attributes', colors.attributes);
+                updateColorInput('punctuation', colors.punctuation);
+                updateColorInput('operators', colors.operators);
+            }
 
             window.addEventListener('message', event => {
                 const message = event.data;
@@ -671,43 +697,16 @@ function getWebviewContent(): string {
                     setLoading('export', false);
                     setLoading('import', false);
                     setLoading('reset', false);
-                } else if (message.type === 'loadCurrentTheme') {
-                    // Update all color inputs with current theme values
-                    const colors = message.colors;
-                    
-                    // Update editor colors
-                    updateColorInput('editor-bg', colors.editorBackground);
-                    updateColorInput('editor-fg', colors.editorForeground);
-                    updateColorInput('line-numbers', colors.lineNumbers);
-                    updateColorInput('selection', colors.selection);
-                    updateColorInput('line-highlight', colors.lineHighlight);
-                    updateColorInput('cursor', colors.cursor);
-                    
-                    // Update UI colors
-                    updateColorInput('sidebar-bg', colors.sidebarBackground);
-                    updateColorInput('sidebar-fg', colors.sidebarForeground);
-                    updateColorInput('activity-bar-bg', colors.activityBarBackground);
-                    updateColorInput('status-bar-bg', colors.statusBarBackground);
-                    updateColorInput('title-bar-bg', colors.titleBarBackground);
-                    updateColorInput('tab-active-bg', colors.tabActiveBackground);
-                    updateColorInput('panel-bg', colors.panelBackground);
-                    
-                    // Update syntax colors
-                    updateColorInput('keywords', colors.keywords);
-                    updateColorInput('control-keywords', colors.controlKeywords);
-                    updateColorInput('strings', colors.strings);
-                    updateColorInput('template-strings', colors.templateStrings);
-                    updateColorInput('comments', colors.comments);
-                    updateColorInput('numbers', colors.numbers);
-                    updateColorInput('constants', colors.constants);
-                    updateColorInput('functions', colors.functions);
-                    updateColorInput('classes', colors.classes);
-                    updateColorInput('variables', colors.variables);
-                    updateColorInput('parameters', colors.parameters);
-                    updateColorInput('tags', colors.tags);
-                    updateColorInput('attributes', colors.attributes);
-                    updateColorInput('punctuation', colors.punctuation);
-                    updateColorInput('operators', colors.operators);
+                } else if (message.type === 'init') {
+                    autoApplyEnabled = message.autoApply;
+                    if (!message.showHexValues) {
+                        document.querySelectorAll('.color-group input[type="text"]').forEach(el => {
+                            el.style.display = 'none';
+                        });
+                    }
+                    if (message.rememberSettings) {
+                        loadColors(message.colors);
+                    }
                 }
             });
             
@@ -766,7 +765,7 @@ function getWebviewContent(): string {
                     document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('selected'));
                     card.classList.add('selected');
                     selectedPreset = card.dataset.preset;
-                    document.getElementById('apply-preset').style.display = 'block';
+                    document.getElementById('apply-preset').click();
                 });
             });
 
@@ -775,6 +774,14 @@ function getWebviewContent(): string {
                 if (hexInput) {
                     picker.addEventListener('input', () => {
                         hexInput.value = picker.value;
+                        triggerAutoApply();
+                    });
+                    hexInput.addEventListener('input', () => {
+                        const val = hexInput.value.trim();
+                        if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                            picker.value = val;
+                            triggerAutoApply();
+                        }
                     });
                 }
             });
