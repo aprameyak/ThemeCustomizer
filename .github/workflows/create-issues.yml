@@ -1,5 +1,7 @@
 name: Issue Generator
 on:
+  schedule:
+    - cron: '0 9 * * 1'
   workflow_dispatch:
     inputs:
       context:
@@ -10,6 +12,11 @@ on:
         description: 'Number of issues to generate (1-5)'
         required: true
         default: '3'
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  DEFAULT_CONTEXT: 'general codebase improvements'
+  DEFAULT_COUNT: '3'
 
 jobs:
   generate-issues:
@@ -25,7 +32,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Install Gemini SDK
         run: npm install @google/generative-ai
@@ -34,12 +41,17 @@ jobs:
         uses: actions/github-script@v7
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          INPUT_CONTEXT: ${{ github.event.inputs.context }}
+          INPUT_COUNT: ${{ github.event.inputs.issue_count }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const { GoogleGenerativeAI } = require('@google/generative-ai');
             const fs = require('fs');
             const { execSync } = require('child_process');
+
+            const context = process.env.INPUT_CONTEXT || 'general codebase improvements';
+            const issueCount = process.env.INPUT_COUNT || '3';
 
             let fileTree = '';
             let sampleCode = '';
@@ -70,7 +82,7 @@ jobs:
             }
 
             const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+            const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
             const prompt = `
               You are a senior software engineer creating GitHub issues to help new contributors onboard to a project easily.
@@ -84,10 +96,10 @@ jobs:
               Sample code:
               ${sampleCode}
 
-              Focus area: ${{ github.event.inputs.context }}
-              Number of issues to generate: ${{ github.event.inputs.issue_count }}
+              Focus area: ${context}
+              Number of issues to generate: ${issueCount}
 
-              Generate exactly ${{ github.event.inputs.issue_count }} issues that are:
+              Generate exactly ${issueCount} issues that are:
               - Scoped small enough to be completed in a single PR
               - Clear enough that a new contributor can pick them up without asking questions
               - Specific to the actual code and files visible above
