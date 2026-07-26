@@ -1,27 +1,24 @@
-# Theme Customizer
+# ThemeCustomizer
 
-![VS Code](https://img.shields.io/badge/VS%20Code-%3E%3D1.107.0-blue)
-![License](https://img.shields.io/github/license/aprameyak/ThemeCustomizer)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white&style=for-the-badge)
+![VS Code](https://img.shields.io/badge/VS_Code-007ACC?logo=visual-studio-code&logoColor=white&style=for-the-badge)
 
-A VS Code extension that allows you to customize your editor theme colors through a visual interface.
+## About
+
+**ThemeCustomizer** is a VS Code extension that lets you personalize your editor theme colors through a visual interface without manually editing JSON settings files. Built with **TypeScript** and the VS Code Extension API, it provides a webview-based color picker panel with preset themes and full import/export support.
 
 ## Features
 
-- Visual color picker interface
-- Real-time theme updates
-- Comprehensive customization options for editor and UI colors
-- Syntax highlighting customization
-- Preset themes (Dark, Light, High Contrast, Monokai, Solarized, GitHub)
-- Import/export theme functionality
-- Reset to default theme
+- Visual color picker interface accessible from the Command Palette
+- Real-time theme updates as you adjust colors
+- Customization of both editor and UI surface colors
+- Syntax highlighting color controls
+- Six built-in presets — Dark, Light, High Contrast, Monokai, Solarized, and GitHub
+- Import and export theme configurations as files
+- Auto-apply mode for instant previewing without clicking Apply
+- Settings persistence across sessions via VS Code workspace configuration
 
-## Usage
+## Technology Stack
 
-1. Open Command Palette (Ctrl+Shift+P)
-2. Type "Open Theme Customizer" and select the command
-3. Choose between Presets or Custom Colors tabs
-4. Select colors and apply theme
-
-## Requirements
-
-- VS Code version 1.107.0 or higher
+- **Language**: TypeScript
+- **Platform**: VS Code Extension API
