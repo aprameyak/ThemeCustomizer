@@ -50,7 +50,7 @@ jobs:
             const fs = require('fs');
             const { execSync } = require('child_process');
 
-            const context = process.env.INPUT_CONTEXT || 'general codebase improvements';
+            const focusArea = process.env.INPUT_CONTEXT || 'general codebase improvements';
             const issueCount = process.env.INPUT_COUNT || '3';
 
             let fileTree = '';
@@ -96,7 +96,7 @@ jobs:
               Sample code:
               ${sampleCode}
 
-              Focus area: ${context}
+              Focus area: ${focusArea}
               Number of issues to generate: ${issueCount}
 
               Generate exactly ${issueCount} issues that are:
