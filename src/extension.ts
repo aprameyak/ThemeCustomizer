@@ -1,69 +1,111 @@
 import * as vscode from 'vscode';
-function getCurrentThemeColors() {
-    const config = vscode.workspace.getConfiguration();
-    const workbenchColors = config.get('workbench.colorCustomizations') as Record<string, string> || {};
-    const tokenColors = config.get('editor.tokenColorCustomizations') as any || {};
-    
-    // Extract token colors from textMateRules if they exist
-    const tokenColorsMap: Record<string, string> = {};
-    if (tokenColors.textMateRules) {
-        tokenColors.textMateRules.forEach((rule: any) => {
-            if (rule.settings && rule.settings.foreground) {
-                // Handle multiple scopes
-                const scopes = Array.isArray(rule.scope) ? rule.scope : [rule.scope];
-                // Use the first scope as the key for simplicity
-                const scopeKey = scopes[0];
-                if (scopeKey) {
-                    // Convert scope to simpler naming convention
-                    const simplifiedKey = scopeKey.replace(/^keyword\..*/, 'keywords')
-                        .replace(/^keyword$/, 'keywords')
-                        .replace(/^string.*$/, 'strings')
-                        .replace(/^comment.*$/, 'comments')
-                        .replace(/^constant\..*$/, 'numbers')
-                        .replace(/^constant.*$/, 'constants')
-                        .replace(/^entity\.name\..*function.*$/, 'functions')
-                        .replace(/^entity\.name\..*$/, 'classes')
-                        .replace(/^variable.*$/, 'variables')
-                        .replace(/^entity\.name\.tag$/, 'tags')
-                        .replace(/^entity\.other\..*attribute.*$/, 'attributes')
-                        .replace(/^punctuation.*$/, 'punctuation')
-                        .replace(/^keyword\..*operator.*$/, 'operators');
-                    tokenColorsMap[simplifiedKey] = rule.settings.foreground;
-                }
-            }
-        });
+const TOKEN_SCOPE_KEYS: Record<string, string> = {
+    'keyword': 'keywords',
+    'storage.type': 'keywords',
+    'storage.modifier': 'keywords',
+    'keyword.control': 'controlKeywords',
+    'string': 'strings',
+    'string.template': 'templateStrings',
+    'string.interpolated': 'templateStrings',
+    'comment': 'comments',
+    'comment.line': 'comments',
+    'comment.block': 'comments',
+    'constant.numeric': 'numbers',
+    'constant.language': 'numbers',
+    'constant.other': 'constants',
+    'entity.name.function': 'functions',
+    'support.function': 'functions',
+    'entity.name.type': 'classes',
+    'entity.name.class': 'classes',
+    'variable': 'variables',
+    'support.variable': 'variables',
+    'variable.parameter': 'parameters',
+    'entity.name.tag': 'tags',
+    'entity.other.attribute-name': 'attributes',
+    'punctuation': 'punctuation',
+    'meta.brace': 'punctuation',
+    'keyword.operator': 'operators'
+};
+
+function toPickerHex(value: unknown, fallback: string): string {
+    if (typeof value !== 'string') {
+        return fallback;
     }
+    const match = /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.exec(value.trim());
+    if (!match) {
+        return fallback;
+    }
+    let hex = match[1];
+    if (hex.length === 3) {
+        hex = hex.split('').map(c => c + c).join('');
+    }
+    return '#' + hex.slice(0, 6).toLowerCase();
+}
+
+export function resolveThemeColors(workbench: Record<string, unknown> | undefined, tokenConfig: { textMateRules?: any[] } | undefined) {
+    const wb = workbench || {};
+    const tokens: Record<string, string> = {};
+    for (const rule of tokenConfig?.textMateRules || []) {
+        const foreground = rule?.settings?.foreground;
+        if (!foreground) {
+            continue;
+        }
+        const scopes: string[] = Array.isArray(rule.scope) ? rule.scope : [rule.scope];
+        for (const scope of scopes) {
+            const key = TOKEN_SCOPE_KEYS[scope];
+            if (key) {
+                tokens[key] = foreground;
+            }
+        }
+    }
+    const wbColor = (key: string, fallback: string) => toPickerHex(wb[key], fallback);
+    const tokenColor = (fallback: string, ...keys: string[]) => {
+        for (const key of keys) {
+            if (tokens[key]) {
+                return toPickerHex(tokens[key], fallback);
+            }
+        }
+        return fallback;
+    };
 
     return {
-        editorBackground: workbenchColors['editor.background'] || '#1e1e1e',
-        editorForeground: workbenchColors['editor.foreground'] || '#d4d4d4',
-        lineNumbers: workbenchColors['editorLineNumber.foreground'] || '#858585',
-        selection: workbenchColors['editor.selectionBackground'] || '#264f78',
-        lineHighlight: workbenchColors['editor.lineHighlightBackground'] || '#2a2d2e',
-        cursor: workbenchColors['editorCursor.foreground'] || '#aeafad',
-        sidebarBackground: workbenchColors['sideBar.background'] || '#252526',
-        sidebarForeground: workbenchColors['sideBar.foreground'] || '#cccccc',
-        activityBarBackground: workbenchColors['activityBar.background'] || '#333333',
-        statusBarBackground: workbenchColors['statusBar.background'] || '#007acc',
-        titleBarBackground: workbenchColors['titleBar.activeBackground'] || '#3c3c3c',
-        tabActiveBackground: workbenchColors['tab.activeBackground'] || '#1e1e1e',
-        panelBackground: workbenchColors['panel.background'] || '#252526',
-        keywords: tokenColorsMap.keywords || '#569cd6',
-        controlKeywords: tokenColorsMap.controlKeywords || '#c586c0',
-        strings: tokenColorsMap.strings || '#ce9178',
-        templateStrings: tokenColorsMap.strings || '#ce9178',
-        comments: tokenColorsMap.comments || '#6a9955',
-        numbers: tokenColorsMap.numbers || '#b5cea8',
-        constants: tokenColorsMap.constants || '#4ec9b0',
-        functions: tokenColorsMap.functions || '#dcdcaa',
-        classes: tokenColorsMap.classes || '#4ec9b0',
-        variables: tokenColorsMap.variables || '#9cdcfe',
-        parameters: tokenColorsMap.variables || '#9cdcfe',
-        tags: tokenColorsMap.tags || '#569cd6',
-        attributes: tokenColorsMap.attributes || '#9cdcfe',
-        punctuation: tokenColorsMap.punctuation || '#d4d4d4',
-        operators: tokenColorsMap.operators || '#d4d4d4'
+        editorBackground: wbColor('editor.background', '#1e1e1e'),
+        editorForeground: wbColor('editor.foreground', '#d4d4d4'),
+        lineNumbers: wbColor('editorLineNumber.foreground', '#858585'),
+        selection: wbColor('editor.selectionBackground', '#264f78'),
+        lineHighlight: wbColor('editor.lineHighlightBackground', '#2a2d2e'),
+        cursor: wbColor('editorCursor.foreground', '#aeafad'),
+        sidebarBackground: wbColor('sideBar.background', '#252526'),
+        sidebarForeground: wbColor('sideBar.foreground', '#cccccc'),
+        activityBarBackground: wbColor('activityBar.background', '#333333'),
+        statusBarBackground: wbColor('statusBar.background', '#007acc'),
+        titleBarBackground: wbColor('titleBar.activeBackground', '#3c3c3c'),
+        tabActiveBackground: wbColor('tab.activeBackground', '#1e1e1e'),
+        panelBackground: wbColor('panel.background', '#252526'),
+        keywords: tokenColor('#569cd6', 'keywords'),
+        controlKeywords: tokenColor('#c586c0', 'controlKeywords', 'keywords'),
+        strings: tokenColor('#ce9178', 'strings'),
+        templateStrings: tokenColor('#ce9178', 'templateStrings', 'strings'),
+        comments: tokenColor('#6a9955', 'comments'),
+        numbers: tokenColor('#b5cea8', 'numbers'),
+        constants: tokenColor('#4ec9b0', 'constants'),
+        functions: tokenColor('#dcdcaa', 'functions'),
+        classes: tokenColor('#4ec9b0', 'classes'),
+        variables: tokenColor('#9cdcfe', 'variables'),
+        parameters: tokenColor('#9cdcfe', 'parameters', 'variables'),
+        tags: tokenColor('#569cd6', 'tags'),
+        attributes: tokenColor('#9cdcfe', 'attributes'),
+        punctuation: tokenColor('#d4d4d4', 'punctuation'),
+        operators: tokenColor('#d4d4d4', 'operators')
     };
+}
+
+function getCurrentThemeColors() {
+    const config = vscode.workspace.getConfiguration();
+    return resolveThemeColors(
+        config.get('workbench.colorCustomizations'),
+        config.get('editor.tokenColorCustomizations')
+    );
 }
 
 export function activate(context: vscode.ExtensionContext) {
@@ -75,26 +117,31 @@ export function activate(context: vscode.ExtensionContext) {
             { enableScripts: true }
         );
         panel.webview.html = getWebviewContent();
-        
-        // Send current theme data and settings to webview
-        const extConfig = vscode.workspace.getConfiguration('themeCustomizer');
-        const autoApply = extConfig.get<boolean>('autoApply', false);
-        const showHexValues = extConfig.get<boolean>('showHexValues', true);
-        const rememberSettings = extConfig.get<boolean>('rememberSettings', true);
-        const currentColors = getCurrentThemeColors();
-        panel.webview.postMessage({
-            type: 'init',
-            colors: currentColors,
-            autoApply,
-            showHexValues,
-            rememberSettings
-        });
+
+        const sendInit = () => {
+            const extConfig = vscode.workspace.getConfiguration('themeCustomizer');
+            panel.webview.postMessage({
+                type: 'init',
+                colors: getCurrentThemeColors(),
+                autoApply: extConfig.get<boolean>('autoApply', false),
+                showHexValues: extConfig.get<boolean>('showHexValues', true),
+                rememberSettings: extConfig.get<boolean>('rememberSettings', true)
+            });
+        };
+        const sendColors = () => {
+            panel.webview.postMessage({ type: 'colors', colors: getCurrentThemeColors() });
+        };
+
         panel.webview.onDidReceiveMessage(async message => {
-            if (message.type === 'applyTheme') {
+            if (message.type === 'ready') {
+                sendInit();
+            } else if (message.type === 'applyTheme') {
                 const isValidHex = (color: string) => /^#[0-9A-F]{6}$/i.test(color);
-                const invalidColors = Object.entries(message.colors as Record<string, string>).filter(([key, value]) => !isValidHex(value));
+                const invalidColors = Object.entries(message.colors as Record<string, string>).filter(([, value]) => !isValidHex(value));
                 if (invalidColors.length > 0) {
-                    vscode.window.showErrorMessage(`Invalid color values: ${invalidColors.map(([k]) => k).join(', ')}`);
+                    const invalidMessage = `Invalid color values: ${invalidColors.map(([k]) => k).join(', ')}`;
+                    vscode.window.showErrorMessage(invalidMessage);
+                    panel.webview.postMessage({ type: 'status', status: 'error', message: invalidMessage });
                     return;
                 }
                 try {
@@ -108,33 +155,13 @@ export function activate(context: vscode.ExtensionContext) {
                             'editor.selectionBackground': message.colors.selection,
                             'editor.lineHighlightBackground': message.colors.lineHighlight,
                             'editorCursor.foreground': message.colors.cursor,
-                            'editorWhitespace.foreground': message.colors.whitespace,
-                            'editorIndentGuide.background': message.colors.indentGuide,
-                            'editorRuler.foreground': message.colors.ruler,
                             'sideBar.background': message.colors.sidebarBackground,
                             'sideBar.foreground': message.colors.sidebarForeground,
-                            'sideBarTitle.foreground': message.colors.sidebarTitle,
                             'activityBar.background': message.colors.activityBarBackground,
-                            'activityBar.foreground': message.colors.activityBarForeground,
                             'statusBar.background': message.colors.statusBarBackground,
-                            'statusBar.foreground': message.colors.statusBarForeground,
-                            'statusBarItem.hoverBackground': message.colors.statusBarItemHover,
                             'titleBar.activeBackground': message.colors.titleBarBackground,
-                            'titleBar.activeForeground': message.colors.titleBarForeground,
                             'tab.activeBackground': message.colors.tabActiveBackground,
-                            'tab.activeForeground': message.colors.tabActiveForeground,
-                            'tab.inactiveBackground': message.colors.tabInactiveBackground,
-                            'tab.inactiveForeground': message.colors.tabInactiveForeground,
-                            'panel.background': message.colors.panelBackground,
-                            'panelTitle.activeForeground': message.colors.panelTitleForeground,
-                            'terminal.background': message.colors.terminalBackground,
-                            'terminal.foreground': message.colors.terminalForeground,
-                            'input.background': message.colors.inputBackground,
-                            'input.foreground': message.colors.inputForeground,
-                            'dropdown.background': message.colors.dropdownBackground,
-                            'dropdown.foreground': message.colors.dropdownForeground,
-                            'list.activeSelectionBackground': message.colors.listActiveSelection,
-                            'list.inactiveSelectionBackground': message.colors.listInactiveSelection
+                            'panel.background': message.colors.panelBackground
                         },
                         vscode.ConfigurationTarget.Global
                     );
@@ -190,6 +217,7 @@ export function activate(context: vscode.ExtensionContext) {
                     const config = vscode.workspace.getConfiguration();
                     await config.update('workbench.colorCustomizations', undefined, vscode.ConfigurationTarget.Global);
                     await config.update('editor.tokenColorCustomizations', undefined, vscode.ConfigurationTarget.Global);
+                    sendColors();
                     vscode.window.showInformationMessage('Theme reset to default!');
                     panel.webview.postMessage({ type: 'status', status: 'success', message: 'Theme reset to default!' });
                 } catch (error) {
@@ -202,6 +230,7 @@ export function activate(context: vscode.ExtensionContext) {
                     const preset = message.preset;
                     await config.update('workbench.colorCustomizations', preset.workbench, vscode.ConfigurationTarget.Global);
                     await config.update('editor.tokenColorCustomizations', preset.tokenColors, vscode.ConfigurationTarget.Global);
+                    sendColors();
                     vscode.window.showInformationMessage(`Preset "${preset.name}" applied successfully!`);
                     panel.webview.postMessage({ type: 'status', status: 'success', message: `Preset "${preset.name}" applied successfully!` });
                 } catch (error) {
@@ -252,13 +281,16 @@ export function activate(context: vscode.ExtensionContext) {
                         },
                         openLabel: 'Import Theme'
                     });
-                    if (uri && uri[0]) {
+                    if (!uri || !uri[0]) {
+                        panel.webview.postMessage({ type: 'status', status: 'info', message: 'Import cancelled' });
+                    } else {
                         const content = await vscode.workspace.fs.readFile(uri[0]);
-                        const themeData = JSON.parse(content.toString());
+                        const themeData = JSON.parse(Buffer.from(content).toString('utf8'));
                         if (themeData.workbench && themeData.tokenColors) {
                             const config = vscode.workspace.getConfiguration();
                             await config.update('workbench.colorCustomizations', themeData.workbench, vscode.ConfigurationTarget.Global);
                             await config.update('editor.tokenColorCustomizations', themeData.tokenColors, vscode.ConfigurationTarget.Global);
+                            sendColors();
                             vscode.window.showInformationMessage('Theme imported successfully!');
                             panel.webview.postMessage({ type: 'status', status: 'success', message: 'Theme imported successfully!' });
                         } else {
@@ -648,6 +680,7 @@ function getWebviewContent(): string {
             let selectedPreset = null;
             let autoApplyEnabled = false;
             let autoApplyTimer = null;
+            let statusTimer = null;
 
             function triggerAutoApply() {
                 if (!autoApplyEnabled) return;
@@ -707,6 +740,8 @@ function getWebviewContent(): string {
                     if (message.rememberSettings) {
                         loadColors(message.colors);
                     }
+                } else if (message.type === 'colors') {
+                    loadColors(message.colors);
                 }
             });
             
@@ -726,8 +761,9 @@ function getWebviewContent(): string {
                 statusText.textContent = message;
                 status.className = 'status ' + type;
                 status.style.display = 'block';
+                clearTimeout(statusTimer);
                 if (duration > 0) {
-                    setTimeout(() => {
+                    statusTimer = setTimeout(() => {
                         status.style.display = 'none';
                     }, duration);
                 }
@@ -798,39 +834,18 @@ function getWebviewContent(): string {
                         selection: document.getElementById('selection').value,
                         lineHighlight: document.getElementById('line-highlight').value,
                         cursor: document.getElementById('cursor').value,
-                        whitespace: '#404040',
-                        indentGuide: '#404040',
-                        ruler: '#5f5f5f',
                         sidebarBackground: document.getElementById('sidebar-bg').value,
                         sidebarForeground: document.getElementById('sidebar-fg').value,
-                        sidebarTitle: '#cccccc',
                         activityBarBackground: document.getElementById('activity-bar-bg').value,
-                        activityBarForeground: '#ffffff',
                         statusBarBackground: document.getElementById('status-bar-bg').value,
-                        statusBarForeground: '#ffffff',
-                        statusBarItemHover: '#ffffff20',
                         titleBarBackground: document.getElementById('title-bar-bg').value,
-                        titleBarForeground: '#cccccc',
                         tabActiveBackground: document.getElementById('tab-active-bg').value,
-                        tabActiveForeground: '#ffffff',
-                        tabInactiveBackground: '#2d2d30',
-                        tabInactiveForeground: '#ffffff80',
                         panelBackground: document.getElementById('panel-bg').value,
-                        panelTitleForeground: '#cccccc',
-                        terminalBackground: '#1e1e1e',
-                        terminalForeground: '#cccccc',
-                        inputBackground: '#3c3c3c',
-                        inputForeground: '#cccccc',
-                        dropdownBackground: '#3c3c3c',
-                        dropdownForeground: '#cccccc',
-                        listActiveSelection: '#094771',
-                        listInactiveSelection: '#37373d',
                         keywords: document.getElementById('keywords').value,
                         controlKeywords: document.getElementById('control-keywords').value,
                         strings: document.getElementById('strings').value,
                         templateStrings: document.getElementById('template-strings').value,
                         comments: document.getElementById('comments').value,
-                        commentStyle: 'italic',
                         numbers: document.getElementById('numbers').value,
                         constants: document.getElementById('constants').value,
                         functions: document.getElementById('functions').value,
@@ -1027,6 +1042,8 @@ function getWebviewContent(): string {
                 showStatus('Resetting to default...', 'info', 0);
                 vscode.postMessage({ type: 'resetTheme' });
             });
+
+            vscode.postMessage({ type: 'ready' });
         </script>
     </body>
     </html>

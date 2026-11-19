@@ -1,5 +1,6 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
+import { resolveThemeColors } from '../extension';
 
 suite('Extension Test Suite', () => {
 
@@ -33,5 +34,26 @@ suite('Extension Test Suite', () => {
 		presets.forEach(preset => {
 			assert.ok(preset.length > 0);
 		});
+	});
+
+	test('resolveThemeColors maps each token scope to its own color', () => {
+		const colors = resolveThemeColors(
+			{ 'editor.background': '#AABBCCDD' },
+			{
+				textMateRules: [
+					{ scope: ['keyword'], settings: { foreground: '#111111' } },
+					{ scope: ['keyword.control'], settings: { foreground: '#222222' } },
+					{ scope: ['entity.name.tag'], settings: { foreground: '#333333' } },
+					{ scope: ['constant.other'], settings: { foreground: '#444444' } },
+					{ scope: ['keyword.operator'], settings: { foreground: '#555555' } }
+				]
+			}
+		);
+		assert.strictEqual(colors.keywords, '#111111');
+		assert.strictEqual(colors.controlKeywords, '#222222');
+		assert.strictEqual(colors.tags, '#333333');
+		assert.strictEqual(colors.constants, '#444444');
+		assert.strictEqual(colors.operators, '#555555');
+		assert.strictEqual(colors.editorBackground, '#aabbcc');
 	});
 });
