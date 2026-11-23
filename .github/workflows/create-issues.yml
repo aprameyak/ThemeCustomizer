@@ -125,7 +125,25 @@ jobs:
               }
             `;
 
-            const result = await model.generateContent(prompt);
+            const retryable = (e) => [429, 500, 502, 503, 504].includes(e.status);
+            const maxAttempts = 6;
+
+            let result;
+            for (let attempt = 1; ; attempt++) {
+              try {
+                result = await model.generateContent(prompt);
+                break;
+              } catch (e) {
+                if (!retryable(e) || attempt === maxAttempts) {
+                  core.setFailed(`Gemini request failed after ${attempt} attempt(s): ${e.message}`);
+                  return;
+                }
+                const delay = 5000 * 2 ** (attempt - 1);
+                console.log(`Gemini returned ${e.status}, retrying in ${delay / 1000}s (attempt ${attempt}/${maxAttempts})`);
+                await new Promise((resolve) => setTimeout(resolve, delay));
+              }
+            }
+
             const rawText = result.response.text().trim();
 
             let parsed;
