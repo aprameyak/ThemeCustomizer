@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { resolveThemeColors } from '../extension';
+import { normalizeHexInput, resolveThemeColors } from '../extension';
 
 suite('Extension Test Suite', () => {
 
@@ -26,6 +26,14 @@ suite('Extension Test Suite', () => {
 		assert.ok(!isValidHex('#GGG'));
 		assert.ok(!isValidHex('#12345'));
 		assert.ok(!isValidHex('#1234567'));
+	});
+
+	test('normalizeHexInput treats uppercase and lowercase hex as equivalent', () => {
+		assert.strictEqual(normalizeHexInput('#AABBCC'), '#aabbcc');
+		assert.strictEqual(normalizeHexInput('#aabbcc'), '#aabbcc');
+		assert.strictEqual(normalizeHexInput('  #AaBbCc  '), '#aabbcc');
+		assert.strictEqual(normalizeHexInput('#GGGGGG'), undefined);
+		assert.strictEqual(normalizeHexInput('#abc'), undefined);
 	});
 
 	test('Preset themes are properly defined', () => {

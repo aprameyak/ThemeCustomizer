@@ -5,15 +5,59 @@ email, or any other method with the owners of this repository before making a ch
 
 Please note we have a code of conduct, please follow it in all your interactions with the project.
 
+## Development setup
+
+Prerequisites: Node.js 22 or newer, and VS Code 1.107 or newer.
+
+1. Clone the repository and install dependencies:
+
+   ```bash
+   git clone https://github.com/aprameyak/ThemeCustomizer.git
+   cd ThemeCustomizer
+   npm install
+   ```
+
+2. Compile the extension:
+
+   ```bash
+   npm run compile   # one-off build to out/
+   npm run watch     # rebuild on change
+   ```
+
+3. Run it: open the repository folder in VS Code and press <kbd>F5</kbd>. This
+   starts an Extension Development Host with the **Theme Customizer: Open Theme
+   Customizer** command available in the Command Palette.
+
+4. Run the tests. They use `@vscode/test-cli`, which downloads a VS Code build on
+   the first run:
+
+   ```bash
+   npm test
+   ```
+
+5. Lint the sources:
+
+   ```bash
+   npm run lint
+   ```
+
+6. Package a `.vsix` when you need to install a build outside the development
+   host:
+
+   ```bash
+   npx vsce package
+   ```
+
 ## Pull Request Process
 
 1. Ensure any install or build dependencies are removed before the end of the layer when doing a 
    build.
-2. Update the README.md with details of changes to the interface, this includes new environment 
+2. Fill in `PULL_REQUEST_TEMPLATE.md` with what changed and how you tested it.
+3. Update the README.md with details of changes to the interface, this includes new environment 
    variables, exposed ports, useful file locations and container parameters.
-3. Increase the version numbers in any examples files and the README.md to the new version that this
+4. Increase the version numbers in any examples files and the README.md to the new version that this
    Pull Request would represent. 
-4. You may merge the Pull Request in once you have the sign-off of two other developers, or if you 
+5. You may merge the Pull Request in once you have the sign-off of two other developers, or if you 
    do not have permission to do that, you may request the second reviewer to merge it for you.
 
 ## Code of Conduct
