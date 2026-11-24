@@ -1,7 +1,6 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { getCurrentThemeColors, resolveThemeColors } from '../extension';
-import { normalizeHexInput, resolveThemeColors } from '../extension';
+import { getCurrentThemeColors, normalizeHexInput, resolveThemeColors } from '../extension';
 
 suite('Extension Test Suite', () => {
 
@@ -52,6 +51,8 @@ suite('Extension Test Suite', () => {
 
 		assert.strictEqual(colors.editorBackground, '#1e1e1e');
 		assert.strictEqual(colors.keywords, '#569cd6');
+	});
+
 	test('normalizeHexInput treats uppercase and lowercase hex as equivalent', () => {
 		assert.strictEqual(normalizeHexInput('#AABBCC'), '#aabbcc');
 		assert.strictEqual(normalizeHexInput('#aabbcc'), '#aabbcc');
