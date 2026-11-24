@@ -51,6 +51,32 @@ Because the extension writes to global settings, changes apply to every workspac
 
 The repo also has `.github/workflows/create-issues.yml`, a weekly (and manually triggered) workflow that uses the Gemini API to draft starter issues for contributors. It needs a `GEMINI_API_KEY` repository secret.
 
+## Syntax token mapping
+
+The syntax color pickers are keyed by token category (`keywords`, `strings`, `comments`, and so on). `TOKEN_SCOPE_KEYS` at the top of `src/extension.ts` maps TextMate scopes found in `editor.tokenColorCustomizations` to those categories. It is used when the panel loads colors (on opening, and again after Reset or a preset): each `textMateRules` entry that has a `foreground` is looked up by scope, and the color goes to the matching picker. If two rules name scopes in the same category, the later rule wins.
+
+| Picker category | TextMate scopes |
+| --- | --- |
+| `keywords` | `keyword`, `storage.type`, `storage.modifier` |
+| `controlKeywords` | `keyword.control` |
+| `strings` | `string` |
+| `templateStrings` | `string.template`, `string.interpolated` |
+| `comments` | `comment`, `comment.line`, `comment.block` |
+| `numbers` | `constant.numeric`, `constant.language` |
+| `constants` | `constant.other` |
+| `functions` | `entity.name.function`, `support.function` |
+| `classes` | `entity.name.type`, `entity.name.class` |
+| `variables` | `variable`, `support.variable` |
+| `parameters` | `variable.parameter` |
+| `tags` | `entity.name.tag` |
+| `attributes` | `entity.other.attribute-name` |
+| `punctuation` | `punctuation`, `meta.brace` |
+| `operators` | `keyword.operator` |
+
+For example, a rule with scope `storage.type` and a foreground color fills the Keywords picker, and a rule with scope `string.interpolated` fills the Template Strings picker. A scope that is not in the table is ignored when the panel loads. Three pickers fall back to another category when they have no color of their own: Control Keywords uses `keywords`, Template Strings uses `strings`, and Parameters uses `variables`.
+
+When you apply colors, the extension writes `textMateRules` for the same scopes. Existing rules that use any of these scopes are replaced, and rules for other scopes are kept. The `comment.line` and `comment.block` rule is written in italics. To make a new scope editable from the panel, add it to `TOKEN_SCOPE_KEYS` and to the `managedScopes` set and `newRules` list in the apply handler in `src/extension.ts`, and add a picker in the webview HTML. A new category also needs an entry in `resolveThemeColors` and the matching webview wiring.
+
 ## Contributing
 
 Issues and pull requests are welcome. Please open an issue to discuss larger changes first, and see `CONTRIBUTING.md` and `CODE_OF_CONDUCT.md`. Run `npm test` before submitting.
