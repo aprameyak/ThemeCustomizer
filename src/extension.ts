@@ -27,6 +27,16 @@ const TOKEN_SCOPE_KEYS: Record<string, string> = {
     'keyword.operator': 'operators'
 };
 
+/**
+ * Normalizes a typed hex color. Returns the lowercase `#rrggbb` form when the
+ * input is a valid six-digit hex color (surrounding whitespace ignored), or
+ * `undefined` otherwise. Uppercase and lowercase input are equivalent.
+ */
+export function normalizeHexInput(value: string): string | undefined {
+    const hex = value.trim().toLowerCase();
+    return /^#[0-9a-f]{6}$/.test(hex) ? hex : undefined;
+}
+
 function toPickerHex(value: unknown, fallback: string): string {
     if (typeof value !== 'string') {
         return fallback;
@@ -136,7 +146,7 @@ export function activate(context: vscode.ExtensionContext) {
             if (message.type === 'ready') {
                 sendInit();
             } else if (message.type === 'applyTheme') {
-                const isValidHex = (color: string) => /^#[0-9A-F]{6}$/i.test(color);
+                const isValidHex = (color: string) => normalizeHexInput(color) !== undefined;
                 const invalidColors = Object.entries(message.colors as Record<string, string>).filter(([, value]) => !isValidHex(value));
                 if (invalidColors.length > 0) {
                     const invalidMessage = `Invalid color values: ${invalidColors.map(([k]) => k).join(', ')}`;
@@ -813,8 +823,12 @@ function getWebviewContent(): string {
                         triggerAutoApply();
                     });
                     hexInput.addEventListener('input', () => {
-                        const val = hexInput.value.trim();
-                        if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                        const val = hexInput.value.trim().toLowerCase();
+                        if (/^#[0-9a-f]{6}$/.test(val)) {
+                            // Treat #AABBCC and #aabbcc as the same value.
+                            if (hexInput.value !== val) {
+                                hexInput.value = val;
+                            }
                             picker.value = val;
                             triggerAutoApply();
                         }
