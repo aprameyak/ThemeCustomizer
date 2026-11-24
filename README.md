@@ -51,6 +51,10 @@ Because the extension writes to global settings, changes apply to every workspac
 
 The repo also has `.github/workflows/create-issues.yml`, a weekly (and manually triggered) workflow that uses the Gemini API to draft starter issues for contributors. It needs a `GEMINI_API_KEY` repository secret.
 
+## Syntax Token Mapping
+
+The `TOKEN_SCOPE_KEYS` object in `src/extension.ts` maps each color picker option to one or more TextMate scopes. For example, `keyword` maps to scopes `keyword`, `storage.type`, and `storage.modifier`; `string` maps to `string`; `comment` maps to `comment`. When you pick a color, the extension writes `textMateRules` entries for all scopes in that group. To add a new token category, add an entry to `TOKEN_SCOPE_KEYS` with the desired scope strings and a corresponding picker in the webview HTML.
+
 ## Contributing
 
 Issues and pull requests are welcome. Please open an issue to discuss larger changes first, and see `CONTRIBUTING.md` and `CODE_OF_CONDUCT.md`. Run `npm test` before submitting.
