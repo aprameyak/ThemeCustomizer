@@ -100,11 +100,17 @@ export function resolveThemeColors(workbench: Record<string, unknown> | undefine
     };
 }
 
-function getCurrentThemeColors() {
-    const config = vscode.workspace.getConfiguration();
+/**
+ * Reads the theme colors from VS Code settings. The config reader is injectable
+ * so tests can supply a fixed settings object instead of changing the user's.
+ */
+export function getCurrentThemeColors(
+    readConfig: () => Pick<vscode.WorkspaceConfiguration, 'get'> = () => vscode.workspace.getConfiguration()
+) {
+    const config = readConfig();
     return resolveThemeColors(
-        config.get('workbench.colorCustomizations'),
-        config.get('editor.tokenColorCustomizations')
+        config.get('workbench.colorCustomizations') as Record<string, unknown> | undefined,
+        config.get('editor.tokenColorCustomizations') as { textMateRules?: any[] } | undefined
     );
 }
 

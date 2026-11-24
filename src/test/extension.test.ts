@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { resolveThemeColors } from '../extension';
+import { getCurrentThemeColors, resolveThemeColors } from '../extension';
 
 suite('Extension Test Suite', () => {
 
@@ -26,6 +26,31 @@ suite('Extension Test Suite', () => {
 		assert.ok(!isValidHex('#GGG'));
 		assert.ok(!isValidHex('#12345'));
 		assert.ok(!isValidHex('#1234567'));
+	});
+
+	test('getCurrentThemeColors reads workbench and token settings', () => {
+		const colors = getCurrentThemeColors(() => ({
+			get(key: string) {
+				if (key === 'workbench.colorCustomizations') {
+					return { 'editor.background': '#AABBCC', 'statusBar.background': '#112233' };
+				}
+				if (key === 'editor.tokenColorCustomizations') {
+					return { textMateRules: [{ scope: ['keyword'], settings: { foreground: '#445566' } }] };
+				}
+				return undefined;
+			}
+		}));
+
+		assert.strictEqual(colors.editorBackground, '#aabbcc');
+		assert.strictEqual(colors.statusBarBackground, '#112233');
+		assert.strictEqual(colors.keywords, '#445566');
+	});
+
+	test('getCurrentThemeColors falls back when settings are empty', () => {
+		const colors = getCurrentThemeColors(() => ({ get: () => undefined }));
+
+		assert.strictEqual(colors.editorBackground, '#1e1e1e');
+		assert.strictEqual(colors.keywords, '#569cd6');
 	});
 
 	test('Preset themes are properly defined', () => {
