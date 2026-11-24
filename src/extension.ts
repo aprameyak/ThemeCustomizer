@@ -381,6 +381,10 @@ function getWebviewContent(): string {
                 cursor: pointer;
                 border-radius: 3px;
             }
+            .color-group input[type="text"].hex-invalid {
+                border-color: var(--vscode-inputValidation-errorBorder, #f14c4c);
+                outline: 1px solid var(--vscode-inputValidation-errorBorder, #f14c4c);
+            }
             .color-group input[type="text"] {
                 padding: 4px 8px;
                 border: 1px solid var(--vscode-input-border);
@@ -814,7 +818,10 @@ function getWebviewContent(): string {
                     });
                     hexInput.addEventListener('input', () => {
                         const val = hexInput.value.trim();
-                        if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                        const valid = /^#[0-9A-Fa-f]{6}$/.test(val);
+                        // Show the invalid state while the field is non-empty and malformed.
+                        hexInput.classList.toggle('hex-invalid', val !== '' && !valid);
+                        if (valid) {
                             picker.value = val;
                             triggerAutoApply();
                         }
