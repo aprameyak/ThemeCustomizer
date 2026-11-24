@@ -1,4 +1,12 @@
 import * as vscode from 'vscode';
+/**
+ * Maps TextMate scopes found in the active color theme to the UI group whose
+ * color they drive. The first matching scope for a group wins when a theme
+ * defines several of them (for example `keyword.control` over `keyword`).
+ *
+ * Keys are exact scopes as reported by `editor.tokenColorCustomizations`;
+ * values are the keys of the `tokens` object built by `getCurrentThemeColors`.
+ */
 const TOKEN_SCOPE_KEYS: Record<string, string> = {
     'keyword': 'keywords',
     'storage.type': 'keywords',
