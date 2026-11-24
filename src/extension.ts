@@ -1,4 +1,12 @@
 import * as vscode from 'vscode';
+/**
+ * Maps TextMate scopes found in the active color theme to the UI group whose
+ * color they drive. The first matching scope for a group wins when a theme
+ * defines several of them (for example `keyword.control` over `keyword`).
+ *
+ * Keys are exact scopes as reported by `editor.tokenColorCustomizations`;
+ * values are the keys of the `tokens` object built by `getCurrentThemeColors`.
+ */
 const TOKEN_SCOPE_KEYS: Record<string, string> = {
     'keyword': 'keywords',
     'storage.type': 'keywords',
@@ -26,6 +34,16 @@ const TOKEN_SCOPE_KEYS: Record<string, string> = {
     'meta.brace': 'punctuation',
     'keyword.operator': 'operators'
 };
+
+/**
+ * Normalizes a typed hex color. Returns the lowercase `#rrggbb` form when the
+ * input is a valid six-digit hex color (surrounding whitespace ignored), or
+ * `undefined` otherwise. Uppercase and lowercase input are equivalent.
+ */
+export function normalizeHexInput(value: string): string | undefined {
+    const hex = value.trim().toLowerCase();
+    return /^#[0-9a-f]{6}$/.test(hex) ? hex : undefined;
+}
 
 function toPickerHex(value: unknown, fallback: string): string {
     if (typeof value !== 'string') {
@@ -142,7 +160,7 @@ export function activate(context: vscode.ExtensionContext) {
             if (message.type === 'ready') {
                 sendInit();
             } else if (message.type === 'applyTheme') {
-                const isValidHex = (color: string) => /^#[0-9A-F]{6}$/i.test(color);
+                const isValidHex = (color: string) => normalizeHexInput(color) !== undefined;
                 const invalidColors = Object.entries(message.colors as Record<string, string>).filter(([, value]) => !isValidHex(value));
                 if (invalidColors.length > 0) {
                     const invalidMessage = `Invalid color values: ${invalidColors.map(([k]) => k).join(', ')}`;
@@ -386,6 +404,10 @@ function getWebviewContent(): string {
                 border: 1px solid var(--vscode-input-border);
                 cursor: pointer;
                 border-radius: 3px;
+            }
+            .color-group input[type="text"].hex-invalid {
+                border-color: var(--vscode-inputValidation-errorBorder, #f14c4c);
+                outline: 1px solid var(--vscode-inputValidation-errorBorder, #f14c4c);
             }
             .color-group input[type="text"] {
                 padding: 4px 8px;
@@ -820,7 +842,16 @@ function getWebviewContent(): string {
                     });
                     hexInput.addEventListener('input', () => {
                         const val = hexInput.value.trim();
-                        if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                        const valid = /^#[0-9A-Fa-f]{6}$/.test(val);
+                        // Show the invalid state while the field is non-empty and malformed.
+                        hexInput.classList.toggle('hex-invalid', val !== '' && !valid);
+                        if (valid) {
+                        const val = hexInput.value.trim().toLowerCase();
+                        if (/^#[0-9a-f]{6}$/.test(val)) {
+                            // Treat #AABBCC and #aabbcc as the same value.
+                            if (hexInput.value !== val) {
+                                hexInput.value = val;
+                            }
                             picker.value = val;
                             triggerAutoApply();
                         }
