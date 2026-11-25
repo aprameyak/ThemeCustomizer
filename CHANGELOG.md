@@ -2,6 +2,19 @@
 
 All notable changes to the "custom-code" extension will be documented in this file.
 
+## [0.4.0] - 2026-11-25
+
+### Added
+- Invalid hex values are now flagged in the webview
+
+### Fixed
+- Uppercase hex input is treated the same as lowercase
+
+### Changed
+- Updated vulnerable dependencies and test tooling
+- Added tests for getCurrentThemeColors and hex normalization
+- Docs: token scope mapping and development setup
+
 ## [0.2.0] - 2026-04-30
 
 ### Fixed

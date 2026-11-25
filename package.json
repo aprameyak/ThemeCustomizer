@@ -2,12 +2,12 @@
   "name": "custom-code",
   "displayName": "Theme Customizer",
   "description": "Easily customize your VS Code theme colors with a visual interface",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "publisher": "aprameyakannan",
   "icon": "assets/logo.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/aprameyak/custom-code"
+    "url": "https://github.com/aprameyak/ThemeCustomizer"
   },
   "license": "MIT",
   "engines": {
@@ -17,7 +17,9 @@
     "Themes",
     "Other"
   ],
-  "activationEvents": ["onCommand:custom-code.openCustomizer"],
+  "activationEvents": [
+    "onCommand:custom-code.openCustomizer"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -60,8 +62,8 @@
     "@types/node": "22.x",
     "@types/sinon": "^17.0.0",
     "@types/vscode": "^1.107.0",
-    "@vscode/test-cli": "^0.0.12",
-    "@vscode/test-electron": "^2.5.2",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.1.0",
     "@vscode/vsce": "^3.7.1",
     "eslint": "^9.39.1",
     "sinon": "^18.0.0",
