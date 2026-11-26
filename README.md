@@ -1,6 +1,6 @@
 # ThemeCustomizer
 
-[![Version](https://img.shields.io/visual-studio-marketplace/v/aprameyakannan.custom-code)](https://marketplace.visualstudio.com/items?itemName=aprameyakannan.custom-code) [![Installs](https://img.shields.io/visual-studio-marketplace/i/aprameyakannan.custom-code)](https://marketplace.visualstudio.com/items?itemName=aprameyakannan.custom-code) [![Downloads](https://img.shields.io/visual-studio-marketplace/d/aprameyakannan.custom-code)](https://marketplace.visualstudio.com/items?itemName=aprameyakannan.custom-code) [![Rating](https://img.shields.io/visual-studio-marketplace/r/aprameyakannan.custom-code)](https://marketplace.visualstudio.com/items?itemName=aprameyakannan.custom-code)
+[![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-007ACC?logo=visualstudiocode&logoColor=white)](https://marketplace.visualstudio.com/items?itemName=aprameyakannan.custom-code) [![Version](https://img.shields.io/github/package-json/v/aprameyak/ThemeCustomizer)](https://github.com/aprameyak/ThemeCustomizer/releases) [![License](https://img.shields.io/github/license/aprameyak/ThemeCustomizer)](LICENSE)
 
 A VS Code extension that lets you change editor, UI, and syntax colors from a color picker panel instead of editing `settings.json` by hand.
 
