@@ -51,8 +51,6 @@ All logic lives in `src/extension.ts`. The command `custom-code.openCustomizer` 
 
 Because the extension writes to global settings, changes apply to every workspace, and any color customizations you made by hand in those keys can be overwritten. Use Reset, or remove the two keys from `settings.json`, to undo the changes.
 
-The repo also has `.github/workflows/create-issues.yml`, a weekly (and manually triggered) workflow that uses the Gemini API to draft starter issues for contributors. It needs a `GEMINI_API_KEY` repository secret.
-
 ## Syntax token mapping
 
 The syntax color pickers are keyed by token category (`keywords`, `strings`, `comments`, and so on). `TOKEN_SCOPE_KEYS` at the top of `src/extension.ts` maps TextMate scopes found in `editor.tokenColorCustomizations` to those categories. It is used when the panel loads colors (on opening, and again after Reset or a preset): each `textMateRules` entry that has a `foreground` is looked up by scope, and the color goes to the matching picker. If two rules name scopes in the same category, the later rule wins.
